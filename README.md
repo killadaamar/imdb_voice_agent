@@ -24,8 +24,8 @@ streamlit run app.py
 First launch downloads the ~90 MB embedding model and indexes all 1000 movies into ChromaDB (`data/chroma_db/`,
 this folder is the shareable local vector store). The sidebar → *Infrastructure* shows what is active.
 
-Offline tests (no key/network/Redis needed): `python tests/test_guardrails.py`, `test_cache_and_store.py`,
-`test_agent_mock.py`, `test_engine.py`.
+Offline tests (no key/network/Redis needed): `python tests/test_guardrails.py`, `python tests/test_cache_and_store.py`,
+`python tests/test_agent_mock.py`, `python tests/test_engine.py`, and `python tests/test_llm.py`.
 
 ## Architecture
 ```

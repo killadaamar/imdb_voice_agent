@@ -1,6 +1,7 @@
 """Thin provider abstraction over two FREE-tier LLM APIs: Google Gemini and Groq (Llama 3.3).
 Also handles speech-to-text (Gemini audio understanding / Groq Whisper)."""
 from __future__ import annotations
+import json
 import os
 import time
 
@@ -35,11 +36,26 @@ class LLM:
                 return self._generate(system, messages, json_mode, temperature)
             except Exception as e:  # rate limits on free tiers -> back off and retry
                 last_err = e
+                if self.provider == "groq" and json_mode and self._is_json_refusal(e):
+                    return json.dumps({"thought": "Provider returned a safety refusal.",
+                                       "action": "refuse", "args": {}})
                 if any(k in str(e).lower() for k in ("429", "rate", "quota", "503", "overloaded")):
                     time.sleep(2 * (attempt + 1))
                     continue
                 raise
         raise last_err
+
+    @staticmethod
+    def _is_json_refusal(error: Exception) -> bool:
+        body = getattr(error, "body", None)
+        detail = body.get("error") if isinstance(body, dict) else None
+        if not isinstance(detail, dict) or detail.get("code") != "json_validate_failed":
+            return False
+        generation = detail.get("failed_generation")
+        if not isinstance(generation, str):
+            return False
+        text = generation.strip().lower()
+        return text.startswith(("i'm sorry", "i am sorry", "i cannot", "i can't", "i’m sorry"))
 
     def _generate(self, system, messages, json_mode, temperature) -> str:
         if self.provider == "gemini":
